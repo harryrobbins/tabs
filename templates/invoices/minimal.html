@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 30mm;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            color: #000;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: normal;
+            letter-spacing: 3px;
+        }
+
+        .info {
+            margin-bottom: 40px;
+            font-size: 11px;
+        }
+
+        .info div {
+            margin: 3px 0;
+        }
+
+        .parties {
+            display: table;
+            width: 100%;
+            margin-bottom: 40px;
+            font-size: 11px;
+        }
+
+        .party {
+            display: table-cell;
+            width: 50%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px 0;
+            border-bottom: 1px solid #000;
+            font-weight: normal;
+        }
+
+        td {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            margin-top: 30px;
+            font-size: 11px;
+        }
+
+        .totals div {
+            margin: 5px 0;
+            text-align: right;
+        }
+
+        .totals .total {
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+    </div>
+
+    <div class="info">
+        <div>No: {{ inv.invoice_number }}</div>
+        <div>Date: {{ inv.date.strftime('%d.%m.%Y') }}</div>
+        <div>Due: {{ inv.due_date.strftime('%d.%m.%Y') }}</div>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <div>{{ inv.sender_name }}</div>
+            <div>{{ inv.sender_address }}</div>
+        </div>
+        <div class="party">
+            <div>{{ inv.recipient_name }}</div>
+            <div>{{ inv.recipient_address }}</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div>Subtotal: £{{ "%.2f"|format(inv.subtotal) }}</div>
+        <div>VAT {{ "%.0f"|format(inv.tax_rate * 100) }}%: £{{ "%.2f"|format(inv.tax_amount) }}</div>
+        <div class="total">Total: £{{ "%.2f"|format(inv.total) }}</div>
+    </div>
+</body>
+</html>

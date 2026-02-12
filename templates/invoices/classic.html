@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            color: #1a1a1a;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            border-bottom: 4px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 36px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .invoice-meta {
+            text-align: right;
+            color: #555;
+        }
+
+        .parties {
+            display: table;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .party {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
+        }
+
+        .party h3 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .party p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 300px;
+            margin-left: auto;
+            margin-top: 20px;
+        }
+
+        .totals table {
+            margin: 0;
+        }
+
+        .totals td {
+            border: none;
+            padding: 8px 12px;
+        }
+
+        .totals .total-row {
+            font-weight: bold;
+            font-size: 16px;
+            background-color: #ecf0f1;
+            border-top: 2px solid #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <div class="invoice-meta">
+            <p><strong>Invoice #:</strong> {{ inv.invoice_number }}</p>
+            <p><strong>Date:</strong> {{ inv.date.strftime('%B %d, %Y') }}</p>
+            <p><strong>Due Date:</strong> {{ inv.due_date.strftime('%B %d, %Y') }}</p>
+        </div>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <h3>From</h3>
+            <p><strong>{{ inv.sender_name }}</strong></p>
+            <p>{{ inv.sender_address }}</p>
+        </div>
+
+        <div class="party">
+            <h3>Bill To</h3>
+            <p><strong>{{ inv.recipient_name }}</strong></p>
+            <p>{{ inv.recipient_address }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.subtotal) }}</td>
+            </tr>
+            <tr>
+                <td>VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%):</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.tax_amount) }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.total) }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+[project]
+name = "artifact-engine"
+version = "0.1.0"
+description = "Synthetic financial document generator for OCR/LLM training"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "weasyprint",
+    "faker",
+    "pandas",
+    "openpyxl",
+    "litellm",
+    "pdf2image",
+    "augraphy",
+    "opencv-python-headless",
+    "pydantic"
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "black"
+]

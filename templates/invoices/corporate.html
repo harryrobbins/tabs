@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            color: #2d3436;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            margin: -20mm -20mm 30px -20mm;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .header-info {
+            margin-top: 15px;
+            font-size: 13px;
+            opacity: 0.95;
+        }
+
+        .header-info span {
+            margin-right: 25px;
+        }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 35px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-col {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 10px;
+        }
+
+        .info-col h3 {
+            margin: 0 0 15px 0;
+            font-size: 12px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .info-col p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #2d3436;
+        }
+
+        .info-col .company {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .summary {
+            margin-top: 40px;
+            padding: 25px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .summary-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .summary-left {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .summary-right {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .totals-table {
+            width: 100%;
+            margin: 0;
+            box-shadow: none;
+        }
+
+        .totals-table td {
+            border: none;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .totals-table .subtotal-row {
+            color: #636e72;
+        }
+
+        .totals-table .tax-row {
+            color: #636e72;
+        }
+
+        .totals-table .total-row {
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+            border-top: 2px solid #667eea;
+            padding-top: 12px;
+        }
+
+        .payment-note {
+            font-size: 12px;
+            color: #636e72;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <div class="header-info">
+            <span><strong>Number:</strong> {{ inv.invoice_number }}</span>
+            <span><strong>Date:</strong> {{ inv.date.strftime('%Y-%m-%d') }}</span>
+            <span><strong>Due:</strong> {{ inv.due_date.strftime('%Y-%m-%d') }}</span>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-col">
+            <h3>Billed From</h3>
+            <p class="company">{{ inv.sender_name }}</p>
+            <p>{{ inv.sender_address }}</p>
+        </div>
+
+        <div class="info-col">
+            <h3>Billed To</h3>
+            <p class="company">{{ inv.recipient_name }}</p>
+            <p>{{ inv.recipient_address }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%">Description</th>
+                <th class="text-right" style="width: 15%">Qty</th>
+                <th class="text-right" style="width: 15%">Rate</th>
+                <th class="text-right" style="width: 20%">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div class="summary-grid">
+            <div class="summary-left">
+                <div class="payment-note">
+                    <strong>Payment Terms:</strong> Due within {{ (inv.due_date - inv.date).days }} days<br>
+                    <strong>Currency:</strong> {{ inv.currency }}
+                </div>
+            </div>
+
+            <div class="summary-right">
+                <table class="totals-table">
+                    <tr class="subtotal-row">
+                        <td>Subtotal:</td>
+                        <td class="text-right">£{{ "%.2f"|format(inv.subtotal) }}</td>
+                    </tr>
+                    <tr class="tax-row">
+                        <td>VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%):</td>
+                        <td class="text-right">£{{ "%.2f"|format(inv.tax_amount) }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td><strong>Total Due:</strong></td>
+                        <td class="text-right"><strong>£{{ "%.2f"|format(inv.total) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

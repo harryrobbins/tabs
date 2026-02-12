@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+            color: #2d3748;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            position: relative;
+            padding: 25px;
+            margin: -30px -30px 30px -30px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 15px 15px 0 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 38px;
+            color: #4a5568;
+            transform: rotate(-2deg);
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.8);
+        }
+
+        .fun-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #fbd38d;
+            color: #744210;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(5deg);
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+        }
+
+        .wavy-divider {
+            height: 15px;
+            background:
+                radial-gradient(circle at 10px -5px, transparent 12px, #fff 13px);
+            background-size: 20px 15px;
+            background-repeat: repeat-x;
+            margin: -15px -30px 25px -30px;
+        }
+
+        .info-bubble {
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: inline-block;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.05);
+        }
+
+        .info-bubble span {
+            margin: 0 12px;
+            font-size: 12px;
+            color: #2d3748;
+        }
+
+        .parties {
+            display: table;
+            width: 100%;
+            margin: 25px 0;
+        }
+
+        .party {
+            display: table-cell;
+            width: 48%;
+            padding: 20px;
+            border-radius: 15px;
+            vertical-align: top;
+        }
+
+        .party-from {
+            background: linear-gradient(135deg, #a8edea30 0%, #fed6e330 100%);
+            transform: rotate(-1deg);
+        }
+
+        .party-to {
+            background: linear-gradient(135deg, #ffecd230 0%, #fcb69f30 100%);
+            transform: rotate(1deg);
+        }
+
+        .party h3 {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .party-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 6px;
+        }
+
+        .party-address {
+            font-size: 12px;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            margin: 25px 0;
+        }
+
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #667eea;
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            border-radius: 8px;
+        }
+
+        td {
+            padding: 12px 15px;
+            font-size: 13px;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        tbody tr td:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        tbody tr td:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals-area {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+            width: 350px;
+            margin-left: auto;
+            transform: rotate(-1deg);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.05);
+        }
+
+        .totals-row {
+            display: table;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .totals-row div {
+            display: table-cell;
+        }
+
+        .totals-label {
+            color: #744210;
+            font-weight: 600;
+        }
+
+        .totals-value {
+            text-align: right;
+            color: #2d3748;
+            font-weight: bold;
+        }
+
+        .super-total {
+            background: white;
+            padding: 15px;
+            margin: 15px -25px -25px -25px;
+            border-radius: 0 0 15px 15px;
+            font-size: 20px;
+            color: #667eea;
+        }
+
+        .doodle {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Invoice ✨</h1>
+            <div class="fun-badge">{{ inv.invoice_number }}</div>
+        </div>
+
+        <div class="wavy-divider"></div>
+
+        <div class="info-bubble">
+            <span>📅 <strong>Date:</strong> {{ inv.date.strftime('%d %b %Y') }}</span>
+            <span>⏰ <strong>Due:</strong> {{ inv.due_date.strftime('%d %b %Y') }}</span>
+            <span>💷 <strong>Currency:</strong> {{ inv.currency }}</span>
+        </div>
+
+        <div class="parties">
+            <div class="party party-from">
+                <h3>👤 From</h3>
+                <div class="party-name">{{ inv.sender_name }}</div>
+                <div class="party-address">{{ inv.sender_address }}</div>
+            </div>
+            <div class="party party-to">
+                <h3>📬 To</h3>
+                <div class="party-name">{{ inv.recipient_name }}</div>
+                <div class="party-address">{{ inv.recipient_address }}</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>What We Did</th>
+                    <th class="text-right">How Much</th>
+                    <th class="text-right">Per Unit</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inv.line_items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                    <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                    <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals-area">
+            <div class="totals-row">
+                <div class="totals-label">Subtotal</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.subtotal) }}</div>
+            </div>
+            <div class="totals-row">
+                <div class="totals-label">VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%)</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.tax_amount) }}</div>
+            </div>
+            <div class="totals-row super-total">
+                <div class="totals-label">🎯 Grand Total</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.total) }}</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

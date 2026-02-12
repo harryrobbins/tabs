@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            color: #000;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .info-line {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #ddd;
+            font-weight: bold;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 300px;
+            margin-left: auto;
+            margin-top: 20px;
+        }
+
+        .totals table {
+            margin: 0;
+        }
+
+        .totals .total-row {
+            font-weight: bold;
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>INVOICE</h1>
+
+    <div class="section">
+        <div class="info-line"><strong>Invoice Number:</strong> {{ inv.invoice_number }}</div>
+        <div class="info-line"><strong>Date:</strong> {{ inv.date.strftime('%d/%m/%Y') }}</div>
+        <div class="info-line"><strong>Due Date:</strong> {{ inv.due_date.strftime('%d/%m/%Y') }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">From:</div>
+        <div>{{ inv.sender_name }}</div>
+        <div>{{ inv.sender_address }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">To:</div>
+        <div>{{ inv.recipient_name }}</div>
+        <div>{{ inv.recipient_address }}</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.subtotal) }}</td>
+            </tr>
+            <tr>
+                <td>VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%):</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.tax_amount) }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.total) }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

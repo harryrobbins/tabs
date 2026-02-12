@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 25mm;
+        }
+
+        body {
+            font-family: 'Garamond', 'Times New Roman', serif;
+            color: #3a3a3a;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px double #8b7355;
+            padding-bottom: 20px;
+            margin-bottom: 35px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: normal;
+            letter-spacing: 8px;
+            color: #5a4a3a;
+        }
+
+        .ornament {
+            text-align: center;
+            font-size: 20px;
+            color: #8b7355;
+            margin: 10px 0;
+        }
+
+        .invoice-details {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 13px;
+            font-style: italic;
+            color: #6a5a4a;
+        }
+
+        .parties {
+            display: table;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .party {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
+        }
+
+        .party-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8b7355;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #d4c4b0;
+            padding-bottom: 5px;
+        }
+
+        .party-name {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #3a3a3a;
+        }
+
+        .party-address {
+            font-size: 12px;
+            color: #6a5a4a;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #5a4a3a;
+            border-bottom: 2px solid #8b7355;
+        }
+
+        td {
+            padding: 12px 8px;
+            font-size: 13px;
+            border-bottom: 1px dotted #d4c4b0;
+            color: #4a4a4a;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 350px;
+            margin: 40px 0 0 auto;
+            border-top: 2px solid #8b7355;
+            padding-top: 15px;
+        }
+
+        .totals-row {
+            display: table;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .totals-label {
+            display: table-cell;
+            text-align: left;
+            color: #6a5a4a;
+        }
+
+        .totals-value {
+            display: table-cell;
+            text-align: right;
+            color: #3a3a3a;
+        }
+
+        .total-final {
+            border-top: 2px double #8b7355;
+            padding-top: 12px;
+            margin-top: 12px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #d4c4b0;
+            font-size: 11px;
+            color: #8b7355;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="ornament">◆</div>
+        <h1>INVOICE</h1>
+        <div class="ornament">◆</div>
+    </div>
+
+    <div class="invoice-details">
+        Invoice No. {{ inv.invoice_number }} — Dated {{ inv.date.strftime('%d %B %Y') }}<br>
+        Payment Due by {{ inv.due_date.strftime('%d %B %Y') }}
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <div class="party-title">Billed From</div>
+            <div class="party-name">{{ inv.sender_name }}</div>
+            <div class="party-address">{{ inv.sender_address }}</div>
+        </div>
+        <div class="party">
+            <div class="party-title">Billed To</div>
+            <div class="party-name">{{ inv.recipient_name }}</div>
+            <div class="party-address">{{ inv.recipient_address }}</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description of Services</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div class="totals-row">
+            <div class="totals-label">Subtotal</div>
+            <div class="totals-value">£{{ "%.2f"|format(inv.subtotal) }}</div>
+        </div>
+        <div class="totals-row">
+            <div class="totals-label">VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%)</div>
+            <div class="totals-value">£{{ "%.2f"|format(inv.tax_amount) }}</div>
+        </div>
+        <div class="totals-row total-final">
+            <div class="totals-label">Total Amount Due</div>
+            <div class="totals-value">£{{ "%.2f"|format(inv.total) }}</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Thank you for your business
+    </div>
+</body>
+</html>

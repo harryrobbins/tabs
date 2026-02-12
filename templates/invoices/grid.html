@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: 'Verdana', sans-serif;
+            color: #2c3e50;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            border: 3px solid #34495e;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #34495e;
+        }
+
+        .header-info {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .info-cell {
+            display: table-cell;
+            width: 50%;
+            border: 2px solid #bdc3c7;
+            padding: 15px;
+            vertical-align: top;
+        }
+
+        .info-cell h3 {
+            margin: 0 0 10px 0;
+            font-size: 11px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-cell p {
+            margin: 3px 0;
+            font-size: 12px;
+        }
+
+        .detail-box {
+            border: 2px solid #34495e;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #ecf0f1;
+        }
+
+        .detail-box table {
+            width: 100%;
+            margin: 0;
+        }
+
+        .detail-box td {
+            padding: 5px;
+            font-size: 12px;
+            border: none;
+        }
+
+        .detail-box .label {
+            font-weight: bold;
+            width: 120px;
+        }
+
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #34495e;
+            margin-bottom: 20px;
+        }
+
+        table.items th {
+            background: #34495e;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid #2c3e50;
+        }
+
+        table.items td {
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #bdc3c7;
+        }
+
+        table.items tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            border: 2px solid #34495e;
+            width: 320px;
+            margin-left: auto;
+        }
+
+        .totals table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .totals td {
+            padding: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .totals .total-row {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .totals .total-row td {
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <div class="header-info">Invoice Number: {{ inv.invoice_number }}</div>
+    </div>
+
+    <div class="detail-box">
+        <table>
+            <tr>
+                <td class="label">Invoice Date:</td>
+                <td>{{ inv.date.strftime('%d/%m/%Y') }}</td>
+                <td class="label">Payment Due:</td>
+                <td>{{ inv.due_date.strftime('%d/%m/%Y') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-cell">
+            <h3>Billing From</h3>
+            <p><strong>{{ inv.sender_name }}</strong></p>
+            <p>{{ inv.sender_address }}</p>
+        </div>
+        <div class="info-cell" style="border-left: none;">
+            <h3>Billing To</h3>
+            <p><strong>{{ inv.recipient_name }}</strong></p>
+            <p>{{ inv.recipient_address }}</p>
+        </div>
+    </div>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th style="width: 50%">Description</th>
+                <th class="text-right" style="width: 15%">Quantity</th>
+                <th class="text-right" style="width: 15%">Unit Price</th>
+                <th class="text-right" style="width: 20%">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inv.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.subtotal) }}</td>
+            </tr>
+            <tr>
+                <td>VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%):</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.tax_amount) }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>TOTAL DUE:</td>
+                <td class="text-right">£{{ "%.2f"|format(inv.total) }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

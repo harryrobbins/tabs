@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Courier New', 'Courier', monospace;
+            color: #2d2d2d;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background: #f5f1e8;
+        }
+
+        .page {
+            background: #fdfaf3;
+            padding: 30px;
+            border: 8px double #8b4513;
+            box-shadow: inset 0 0 50px rgba(139, 69, 19, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #8b4513;
+            color: #fdfaf3;
+            border: 3px solid #5d2e0f;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-top: 8px;
+        }
+
+        .stamp {
+            position: relative;
+            border: 3px dashed #8b4513;
+            padding: 15px;
+            margin: 20px 0;
+            background: #fff9e6;
+        }
+
+        .stamp-corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #8b4513;
+            transform: rotate(45deg);
+        }
+
+        .invoice-info {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 13px;
+            background: #fff9e6;
+            padding: 12px;
+            border-top: 2px solid #8b4513;
+            border-bottom: 2px solid #8b4513;
+        }
+
+        .invoice-info div {
+            margin: 3px 0;
+        }
+
+        .parties {
+            display: table;
+            width: 100%;
+            margin: 25px 0;
+        }
+
+        .party {
+            display: table-cell;
+            width: 48%;
+            padding: 15px;
+            background: #fff9e6;
+            border: 2px solid #8b4513;
+            vertical-align: top;
+        }
+
+        .party-title {
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #8b4513;
+            padding-bottom: 5px;
+        }
+
+        .party-content {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            border: 3px double #8b4513;
+        }
+
+        th {
+            background: #8b4513;
+            color: #fdfaf3;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #5d2e0f;
+        }
+
+        td {
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #d4a574;
+            background: #fff9e6;
+        }
+
+        tbody tr:nth-child(odd) td {
+            background: #fdfaf3;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 350px;
+            margin-left: auto;
+            border: 3px double #8b4513;
+            background: #fff9e6;
+            padding: 15px;
+        }
+
+        .totals-row {
+            display: table;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .totals-row div {
+            display: table-cell;
+        }
+
+        .totals-label {
+            text-align: left;
+        }
+
+        .totals-value {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .total-final {
+            border-top: 3px double #8b4513;
+            padding-top: 12px;
+            margin-top: 12px;
+            font-size: 16px;
+            background: #8b4513;
+            color: #fdfaf3;
+            padding: 10px;
+            margin: 15px -15px -15px -15px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            border: 2px dashed #8b4513;
+            font-size: 11px;
+            background: #fff9e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <h1>☆ INVOICE ☆</h1>
+            <div class="header-subtitle">— PAYMENT REQUEST —</div>
+        </div>
+
+        <div class="invoice-info">
+            <div><strong>INVOICE NO:</strong> {{ inv.invoice_number }}</div>
+            <div><strong>DATE ISSUED:</strong> {{ inv.date.strftime('%d/%m/%Y') }} | <strong>DUE:</strong> {{ inv.due_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+
+        <div class="parties">
+            <div class="party">
+                <div class="party-title">◆ From ◆</div>
+                <div class="party-content">
+                    <div><strong>{{ inv.sender_name }}</strong></div>
+                    <div>{{ inv.sender_address }}</div>
+                </div>
+            </div>
+            <div class="party">
+                <div class="party-title">◆ To ◆</div>
+                <div class="party-content">
+                    <div><strong>{{ inv.recipient_name }}</strong></div>
+                    <div>{{ inv.recipient_address }}</div>
+                </div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>DESCRIPTION</th>
+                    <th class="text-right">QTY</th>
+                    <th class="text-right">PRICE</th>
+                    <th class="text-right">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inv.line_items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td class="text-right">{{ "%.1f"|format(item.quantity) }}</td>
+                    <td class="text-right">£{{ "%.2f"|format(item.unit_price) }}</td>
+                    <td class="text-right">£{{ "%.2f"|format(item.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="totals-row">
+                <div class="totals-label">SUBTOTAL:</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.subtotal) }}</div>
+            </div>
+            <div class="totals-row">
+                <div class="totals-label">VAT ({{ "%.0f"|format(inv.tax_rate * 100) }}%):</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.tax_amount) }}</div>
+            </div>
+            <div class="totals-row total-final">
+                <div class="totals-label">AMOUNT DUE:</div>
+                <div class="totals-value">£{{ "%.2f"|format(inv.total) }}</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            ※ PLEASE REMIT PAYMENT BY DUE DATE ※<br>
+            THANK YOU FOR YOUR BUSINESS
+        </div>
+    </div>
+</body>
+</html>
