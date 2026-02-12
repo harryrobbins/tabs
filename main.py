@@ -1,94 +1,207 @@
 #!/usr/bin/env python3
 """
-Artifact Engine - Synthetic Invoice Data Generator
+Artifact Engine - Synthetic Document Generator
 
-This is the main orchestrator that runs the complete pipeline:
-1. Fabricate synthetic invoice data
-2. Render data into PDFs using templates
-3. Rasterize PDFs to clean images
-4. Apply degradation effects (entropy)
-5. Export ground truth to XLSX
+Generates synthetic invoices and receipts with realistic degradation for OCR/LLM training.
+Complete pipeline: Fabrication → Rendering → Rasterization → Entropy → Export
 """
 
 import argparse
 import time
 from pathlib import Path
 
-from src.fabricator import DataFabricator
+from src.fabricator import DataFabricator, ReceiptFabricator
 from src.renderer import Renderer
 from src.rasterizer import Rasterizer
 from src.entropy import EntropyEngine
 from src.exporter import GroundTruthExporter
 
 
-def generate_batch(
-    count: int = 20,
+def generate_documents(
+    invoice_count: int = 0,
+    receipt_count: int = 0,
     output_dir: str = "output",
     degradation: str = "medium",
     dpi: int = 300,
-    clean_images: bool = True
+    clean_images: bool = False
 ):
     """
-    Generate a batch of synthetic invoice images with ground truth.
+    Generate batches of synthetic invoices and/or receipts.
 
     Args:
-        count: Number of invoices to generate
+        invoice_count: Number of invoices to generate
+        receipt_count: Number of receipts to generate
         output_dir: Base output directory
         degradation: Degradation intensity ('light', 'medium', 'heavy')
         dpi: Image resolution for rasterization
         clean_images: Whether to save clean (pre-degradation) images
-
-    Returns:
-        Dictionary with paths to generated files
     """
+    if invoice_count == 0 and receipt_count == 0:
+        print("Error: Must specify at least one of --invoices or --receipts")
+        return
+
     print("=" * 70)
-    print("ARTIFACT ENGINE - Synthetic Invoice Generator")
+    print("ARTIFACT ENGINE - Synthetic Document Generator")
     print("=" * 70)
     print(f"\nConfiguration:")
-    print(f"  Invoice count: {count}")
+    if invoice_count > 0:
+        print(f"  Invoices: {invoice_count}")
+    if receipt_count > 0:
+        print(f"  Receipts: {receipt_count}")
     print(f"  Output directory: {output_dir}")
     print(f"  Degradation level: {degradation}")
     print(f"  Image DPI: {dpi}")
     print(f"  Save clean images: {clean_images}")
     print()
 
+    total_start = time.time()
+
+    # Initialize shared components
+    rasterizer = Rasterizer(dpi=dpi)
+    entropy = EntropyEngine(intensity=degradation)
+    exporter = GroundTruthExporter()
+
+    # Process invoices
+    if invoice_count > 0:
+        print("\n" + "="*70)
+        print("PROCESSING INVOICES")
+        print("="*70 + "\n")
+
+        invoices = process_document_type(
+            document_type="invoice",
+            count=invoice_count,
+            output_dir=output_dir,
+            rasterizer=rasterizer,
+            entropy=entropy,
+            clean_images=clean_images
+        )
+
+        # Export invoice ground truth
+        print("[5/5] EXPORT - Creating invoice ground truth...")
+        start_time = time.time()
+        inv_gt_path = exporter.export_to_xlsx(invoices, f"{output_dir}/invoices_ground_truth.xlsx")
+        inv_summary_path = exporter.export_summary(invoices, f"{output_dir}/invoices_summary.xlsx")
+        export_time = time.time() - start_time
+        print(f"  ✓ Ground truth: {inv_gt_path}")
+        print(f"  ✓ Summary: {inv_summary_path}")
+        print(f"  ✓ Completed in {export_time:.2f}s\n")
+
+    # Process receipts
+    if receipt_count > 0:
+        print("\n" + "="*70)
+        print("PROCESSING RECEIPTS")
+        print("="*70 + "\n")
+
+        receipts = process_document_type(
+            document_type="receipt",
+            count=receipt_count,
+            output_dir=output_dir,
+            rasterizer=rasterizer,
+            entropy=entropy,
+            clean_images=clean_images
+        )
+
+        # Export receipt ground truth
+        print("[5/5] EXPORT - Creating receipt ground truth...")
+        start_time = time.time()
+        rec_gt_path = exporter.export_receipts_to_xlsx(receipts, f"{output_dir}/receipts_ground_truth.xlsx")
+        rec_summary_path = exporter.export_receipts_summary(receipts, f"{output_dir}/receipts_summary.xlsx")
+        export_time = time.time() - start_time
+        print(f"  ✓ Ground truth: {rec_gt_path}")
+        print(f"  ✓ Summary: {rec_summary_path}")
+        print(f"  ✓ Completed in {export_time:.2f}s\n")
+
+    # Final summary
+    total_time = time.time() - total_start
+    total_docs = invoice_count + receipt_count
+
+    print("=" * 70)
+    print("GENERATION COMPLETE")
+    print("=" * 70)
+    print(f"\nTotal time: {total_time:.2f}s ({total_time/total_docs:.2f}s per document)")
+    print(f"\nOutput structure:")
+    print(f"  {output_dir}/")
+    if invoice_count > 0:
+        print(f"    ├── invoices_pdfs/              ({invoice_count} files)")
+        if clean_images:
+            print(f"    ├── invoices_images_clean/      ({invoice_count} files)")
+        print(f"    ├── invoices_images_degraded/   ({invoice_count} files)")
+        print(f"    ├── invoices_ground_truth.xlsx")
+        print(f"    └── invoices_summary.xlsx")
+    if receipt_count > 0:
+        print(f"    ├── receipts_pdfs/              ({receipt_count} files)")
+        if clean_images:
+            print(f"    ├── receipts_images_clean/      ({receipt_count} files)")
+        print(f"    ├── receipts_images_degraded/   ({receipt_count} files)")
+        print(f"    ├── receipts_ground_truth.xlsx")
+        print(f"    └── receipts_summary.xlsx")
+    print()
+
+
+def process_document_type(
+    document_type: str,
+    count: int,
+    output_dir: str,
+    rasterizer: Rasterizer,
+    entropy: EntropyEngine,
+    clean_images: bool
+):
+    """
+    Process a single document type through the entire pipeline.
+
+    Args:
+        document_type: 'invoice' or 'receipt'
+        count: Number of documents to generate
+        output_dir: Base output directory
+        rasterizer: Rasterizer instance
+        entropy: EntropyEngine instance
+        clean_images: Whether to keep clean images
+
+    Returns:
+        List of generated document data objects
+    """
     # Setup output directories
-    pdf_dir = f"{output_dir}/pdfs"
-    clean_dir = f"{output_dir}/images_clean"
-    degraded_dir = f"{output_dir}/images_degraded"
+    prefix = f"{document_type}s"
+    pdf_dir = f"{output_dir}/{prefix}_pdfs"
+    clean_dir = f"{output_dir}/{prefix}_images_clean"
+    degraded_dir = f"{output_dir}/{prefix}_images_degraded"
 
     Path(pdf_dir).mkdir(parents=True, exist_ok=True)
     Path(clean_dir).mkdir(parents=True, exist_ok=True)
     Path(degraded_dir).mkdir(parents=True, exist_ok=True)
 
-    # Initialize components
-    fabricator = DataFabricator()
-    renderer = Renderer()
-    rasterizer = Rasterizer(dpi=dpi)
-    entropy = EntropyEngine(intensity=degradation)
-    exporter = GroundTruthExporter()
+    # Initialize fabricator and renderer
+    if document_type == "invoice":
+        fabricator = DataFabricator()
+        renderer = Renderer(document_type="invoice")
+    else:  # receipt
+        fabricator = ReceiptFabricator()
+        renderer = Renderer(document_type="receipt")
 
     # Stage 1: Fabrication
-    print("[1/5] FABRICATION - Generating synthetic invoice data...")
+    print(f"[1/4] FABRICATION - Generating synthetic {document_type} data...")
     start_time = time.time()
 
-    invoices = []
+    documents = []
     for i in range(count):
-        invoice = fabricator.generate_invoice()
-        invoices.append(invoice)
+        if document_type == "invoice":
+            doc = fabricator.generate_invoice()
+        else:
+            doc = fabricator.generate_receipt()
+        documents.append(doc)
         if (i + 1) % 10 == 0 or (i + 1) == count:
-            print(f"  Generated {i + 1}/{count} invoices")
+            print(f"  Generated {i + 1}/{count} {prefix}")
 
     fab_time = time.time() - start_time
     print(f"  ✓ Completed in {fab_time:.2f}s\n")
 
     # Stage 2: Rendering
-    print("[2/5] RENDERING - Converting data to PDFs...")
+    print(f"[2/4] RENDERING - Converting data to PDFs...")
     start_time = time.time()
 
     pdf_paths = []
-    for i, invoice in enumerate(invoices):
-        pdf_path = renderer.render_to_pdf(invoice, output_dir=pdf_dir)
+    for i, doc in enumerate(documents):
+        pdf_path = renderer.render_to_pdf(doc, output_dir=pdf_dir)
         pdf_paths.append(pdf_path)
         if (i + 1) % 10 == 0 or (i + 1) == count:
             print(f"  Rendered {i + 1}/{count} PDFs")
@@ -97,7 +210,7 @@ def generate_batch(
     print(f"  ✓ Completed in {render_time:.2f}s\n")
 
     # Stage 3: Rasterization
-    print("[3/5] RASTERIZATION - Converting PDFs to images...")
+    print(f"[3/4] RASTERIZATION - Converting PDFs to images...")
     start_time = time.time()
 
     clean_paths = []
@@ -111,7 +224,7 @@ def generate_batch(
     print(f"  ✓ Completed in {raster_time:.2f}s\n")
 
     # Stage 4: Entropy (Degradation)
-    print("[4/5] ENTROPY - Applying degradation effects...")
+    print(f"[4/4] ENTROPY - Applying degradation effects...")
     start_time = time.time()
 
     degraded_paths = []
@@ -124,18 +237,6 @@ def generate_batch(
     entropy_time = time.time() - start_time
     print(f"  ✓ Completed in {entropy_time:.2f}s\n")
 
-    # Stage 5: Export Ground Truth
-    print("[5/5] EXPORT - Creating ground truth XLSX...")
-    start_time = time.time()
-
-    gt_path = exporter.export_to_xlsx(invoices, f"{output_dir}/ground_truth.xlsx")
-    summary_path = exporter.export_summary(invoices, f"{output_dir}/summary.xlsx")
-
-    export_time = time.time() - start_time
-    print(f"  ✓ Ground truth: {gt_path}")
-    print(f"  ✓ Summary: {summary_path}")
-    print(f"  ✓ Completed in {export_time:.2f}s\n")
-
     # Cleanup: Remove clean images if not requested
     if not clean_images:
         print("Cleaning up intermediate files...")
@@ -143,42 +244,40 @@ def generate_batch(
             Path(path).unlink()
         print(f"  ✓ Removed {len(clean_paths)} clean images\n")
 
-    # Summary
-    total_time = fab_time + render_time + raster_time + entropy_time + export_time
-    print("=" * 70)
-    print("GENERATION COMPLETE")
-    print("=" * 70)
-    print(f"\nTotal time: {total_time:.2f}s ({total_time/count:.2f}s per invoice)")
-    print(f"\nOutput structure:")
-    print(f"  {output_dir}/")
-    print(f"    ├── pdfs/              ({count} files)")
-    if clean_images:
-        print(f"    ├── images_clean/      ({count} files)")
-    print(f"    ├── images_degraded/   ({count} files)")
-    print(f"    ├── ground_truth.xlsx  (denormalized data)")
-    print(f"    └── summary.xlsx       (invoice summary)")
-    print()
-
-    return {
-        "invoices": invoices,
-        "pdfs": pdf_paths,
-        "clean_images": clean_paths if clean_images else [],
-        "degraded_images": degraded_paths,
-        "ground_truth": gt_path,
-        "summary": summary_path,
-    }
+    return documents
 
 
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Generate synthetic invoice images for OCR/LLM training"
+        description="Generate synthetic invoice and receipt images for OCR/LLM training",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Generate 20 invoices
+  python main.py --invoices 20
+
+  # Generate 30 receipts
+  python main.py --receipts 30
+
+  # Generate both
+  python main.py --invoices 20 --receipts 30
+
+  # With heavy degradation and keep clean images
+  python main.py --invoices 50 --receipts 50 --degradation heavy --keep-clean
+        """
     )
     parser.add_argument(
-        "-n", "--count",
+        "--invoices",
         type=int,
-        default=20,
-        help="Number of invoices to generate (default: 20)"
+        default=0,
+        help="Number of invoices to generate (default: 0)"
+    )
+    parser.add_argument(
+        "--receipts",
+        type=int,
+        default=0,
+        help="Number of receipts to generate (default: 0)"
     )
     parser.add_argument(
         "-o", "--output",
@@ -205,10 +304,28 @@ def main():
         help="Keep clean (pre-degradation) images"
     )
 
+    # Legacy support: -n maps to --invoices
+    parser.add_argument(
+        "-n",
+        type=int,
+        dest="legacy_count",
+        help="(Legacy) Number of invoices - use --invoices instead"
+    )
+
     args = parser.parse_args()
 
-    generate_batch(
-        count=args.count,
+    # Handle legacy -n argument
+    invoice_count = args.invoices
+    if args.legacy_count is not None:
+        if args.invoices == 0:
+            invoice_count = args.legacy_count
+            print(f"Warning: -n is deprecated, use --invoices instead\n")
+        else:
+            print(f"Warning: Both -n and --invoices specified, using --invoices\n")
+
+    generate_documents(
+        invoice_count=invoice_count,
+        receipt_count=args.receipts,
         output_dir=args.output,
         degradation=args.degradation,
         dpi=args.dpi,

@@ -3,21 +3,30 @@ import random
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
-from src.models import InvoiceData
+from src.models import InvoiceData, ReceiptData
+from typing import Union
 
 
 class Renderer:
-    """Renders InvoiceData into PDFs using HTML/CSS templates."""
+    """Renders invoice and receipt data into PDFs using HTML/CSS templates."""
 
-    def __init__(self, template_dir="templates/invoices"):
+    def __init__(self, document_type="invoice"):
         """
-        Initialize the renderer with a template directory.
+        Initialize the renderer for a specific document type.
 
         Args:
-            template_dir: Path to directory containing Jinja2 templates
+            document_type: Type of document - 'invoice' or 'receipt'
         """
-        self.template_dir = template_dir
-        self.env = Environment(loader=FileSystemLoader(template_dir))
+        self.document_type = document_type
+
+        if document_type == "invoice":
+            self.template_dir = "templates/invoices"
+        elif document_type == "receipt":
+            self.template_dir = "templates/receipts"
+        else:
+            raise ValueError(f"Unknown document type: {document_type}")
+
+        self.env = Environment(loader=FileSystemLoader(self.template_dir))
 
         # Discover available templates
         self.templates = self._discover_templates()
@@ -36,15 +45,15 @@ class Renderer:
 
     def render_to_pdf(
         self,
-        data: InvoiceData,
+        data: Union[InvoiceData, ReceiptData],
         output_dir="output/pdfs",
         template_name=None
     ) -> str:
         """
-        Render invoice data to a PDF file.
+        Render invoice or receipt data to a PDF file.
 
         Args:
-            data: InvoiceData object to render
+            data: InvoiceData or ReceiptData object to render
             output_dir: Directory to save the PDF
             template_name: Specific template to use (if None, random selection)
 
@@ -62,7 +71,12 @@ class Renderer:
 
         # Load and render template
         template = self.env.get_template(template_name)
-        html_string = template.render(inv=data)
+
+        # Use different variable names for invoices vs receipts in templates
+        if self.document_type == "invoice":
+            html_string = template.render(inv=data)
+        else:  # receipt
+            html_string = template.render(rec=data)
 
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
@@ -78,17 +92,28 @@ class Renderer:
 
 # Quick test if run directly
 if __name__ == "__main__":
-    from src.fabricator import DataFabricator
+    from src.fabricator import DataFabricator, ReceiptFabricator
 
-    print("Testing renderer...")
-    fab = DataFabricator()
-    renderer = Renderer()
+    print("Testing Invoice Renderer...")
+    inv_fab = DataFabricator()
+    inv_renderer = Renderer(document_type="invoice")
 
-    # Generate a test invoice
-    invoice = fab.generate_invoice()
+    invoice = inv_fab.generate_invoice()
     print(f"Generated invoice: {invoice.invoice_number}")
 
-    # Render it to PDF
-    pdf_path = renderer.render_to_pdf(invoice)
+    pdf_path = inv_renderer.render_to_pdf(invoice)
     print(f"PDF created at: {pdf_path}")
     print(f"Template used: {invoice.template_used}")
+
+    print("\n" + "="*70 + "\n")
+
+    print("Testing Receipt Renderer...")
+    rec_fab = ReceiptFabricator()
+    rec_renderer = Renderer(document_type="receipt")
+
+    receipt = rec_fab.generate_receipt()
+    print(f"Generated receipt: {receipt.receipt_number}")
+
+    pdf_path = rec_renderer.render_to_pdf(receipt)
+    print(f"PDF created at: {pdf_path}")
+    print(f"Template used: {receipt.template_used}")
