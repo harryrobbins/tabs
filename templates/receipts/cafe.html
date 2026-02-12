@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: 80mm 200mm;
+            margin: 5mm;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            color: #3e2723;
+            line-height: 1.4;
+            margin: 0;
+            padding: 5mm;
+            font-size: 11px;
+            width: 70mm;
+            background: #fef9e7;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .coffee-icon {
+            font-size: 24px;
+            margin: 5px 0;
+        }
+
+        .store-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #6d4c41;
+            margin: 5px 0;
+        }
+
+        .tagline {
+            font-size: 9px;
+            font-style: italic;
+            color: #8d6e63;
+            margin: 3px 0;
+        }
+
+        .store-info {
+            font-size: 9px;
+            color: #5d4037;
+            margin: 2px 0;
+        }
+
+        .wavy-line {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 2px;
+            margin: 8px 0;
+            color: #8d6e63;
+        }
+
+        .meta-box {
+            background: #fff;
+            border: 1px dashed #8d6e63;
+            padding: 5px;
+            margin: 8px 0;
+            font-size: 9px;
+        }
+
+        .meta-row {
+            margin: 2px 0;
+        }
+
+        .items {
+            margin: 10px 0;
+        }
+
+        .item {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px dotted #bcaaa4;
+        }
+
+        .item-header {
+            display: table;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .item-desc {
+            display: table-cell;
+            text-align: left;
+        }
+
+        .item-price {
+            display: table-cell;
+            text-align: right;
+        }
+
+        .item-detail {
+            font-size: 9px;
+            color: #6d4c41;
+            margin-top: 2px;
+        }
+
+        .totals {
+            background: #fff;
+            border: 2px solid #6d4c41;
+            padding: 8px;
+            margin: 10px 0;
+        }
+
+        .totals-row {
+            display: table;
+            width: 100%;
+            margin: 4px 0;
+            font-size: 11px;
+        }
+
+        .totals-label {
+            display: table-cell;
+        }
+
+        .totals-value {
+            display: table-cell;
+            text-align: right;
+        }
+
+        .total-final {
+            font-weight: bold;
+            font-size: 14px;
+            border-top: 2px solid #6d4c41;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
+
+        .payment {
+            text-align: center;
+            margin: 8px 0;
+            font-size: 10px;
+            background: #fff;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 10px;
+            color: #6d4c41;
+        }
+
+        .heart {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="coffee-icon">☕</div>
+        <div class="store-name">{{ rec.store_name }}</div>
+        <div class="tagline">Freshly Brewed Daily</div>
+        <div class="store-info">{{ rec.store_address }}</div>
+        <div class="store-info">{{ rec.store_phone }}</div>
+    </div>
+
+    <div class="wavy-line">~ ~ ~ ~ ~ ~ ~ ~</div>
+
+    <div class="meta-box">
+        <div class="meta-row"><strong>Receipt:</strong> {{ rec.receipt_number }}</div>
+        <div class="meta-row"><strong>Date:</strong> {{ rec.datetime.strftime('%d %b %Y') }}</div>
+        <div class="meta-row"><strong>Time:</strong> {{ rec.datetime.strftime('%H:%M') }}</div>
+        <div class="meta-row"><strong>ID:</strong> {{ rec.transaction_id }}</div>
+    </div>
+
+    <div class="items">
+        {% for item in rec.items %}
+        <div class="item">
+            <div class="item-header">
+                <div class="item-desc">{{ item.description }}</div>
+                <div class="item-price">£{{ "%.2f"|format(item.total) }}</div>
+            </div>
+            {% if item.quantity != 1.0 %}
+            <div class="item-detail">{{ "%.0f"|format(item.quantity) }} × £{{ "%.2f"|format(item.unit_price) }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="totals">
+        <div class="totals-row">
+            <div class="totals-label">Subtotal</div>
+            <div class="totals-value">£{{ "%.2f"|format(rec.subtotal) }}</div>
+        </div>
+        <div class="totals-row">
+            <div class="totals-label">VAT ({{ "%.0f"|format(rec.tax_rate * 100) }}%)</div>
+            <div class="totals-value">£{{ "%.2f"|format(rec.tax_amount) }}</div>
+        </div>
+        <div class="totals-row total-final">
+            <div class="totals-label">TOTAL</div>
+            <div class="totals-value">£{{ "%.2f"|format(rec.total) }}</div>
+        </div>
+    </div>
+
+    <div class="payment">
+        <strong>{{ rec.payment_method }}</strong>
+        {% if rec.card_last_four %}
+        <div>Card ending {{ rec.card_last_four }}</div>
+        {% endif %}
+    </div>
+
+    <div class="wavy-line">~ ~ ~ ~ ~ ~ ~ ~</div>
+
+    <div class="footer">
+        <div>Thank You!</div>
+        <div class="heart">♥</div>
+        <div>See You Again Soon</div>
+    </div>
+</body>
+</html>

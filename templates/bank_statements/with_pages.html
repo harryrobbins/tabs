@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm;
+
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: Arial, sans-serif;
+                font-size: 9px;
+                color: #666;
+            }
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
+        }
+
+        .header {
+            border-bottom: 3px solid #003d7a;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .bank-logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #003d7a;
+            margin-bottom: 5px;
+        }
+
+        .bank-address {
+            font-size: 8px;
+            color: #666;
+        }
+
+        .statement-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #003d7a;
+            margin: 20px 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .account-info {
+            background: #f5f7fa;
+            border: 1px solid #d0d7de;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .info-row {
+            display: table-row;
+        }
+
+        .info-cell {
+            display: table-cell;
+            padding: 3px 10px 3px 0;
+            font-size: 9px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            width: 35%;
+        }
+
+        .info-value {
+            color: #1a1a1a;
+        }
+
+        .period-info {
+            background: #003d7a;
+            color: white;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 10px;
+        }
+
+        .balance-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .balance-label {
+            display: table-cell;
+            font-weight: bold;
+        }
+
+        .balance-value {
+            display: table-cell;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        table.transactions {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        table.transactions thead {
+            background: #003d7a;
+            color: white;
+        }
+
+        table.transactions th {
+            padding: 8px 6px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: bold;
+            border: 1px solid #002a54;
+        }
+
+        table.transactions td {
+            padding: 6px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        table.transactions tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .date-col {
+            width: 12%;
+        }
+
+        .desc-col {
+            width: 58%;
+        }
+
+        .debit-col {
+            width: 12%;
+            text-align: right;
+        }
+
+        .credit-col {
+            width: 12%;
+            text-align: right;
+        }
+
+        .balance-col {
+            width: 15%;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .closing-balance {
+            background: #f0f4f8;
+            border: 2px solid #003d7a;
+            padding: 12px;
+            margin-top: 20px;
+        }
+
+        .closing-balance-row {
+            display: table;
+            width: 100%;
+            font-size: 11px;
+        }
+
+        .closing-label {
+            display: table-cell;
+            font-weight: bold;
+            color: #003d7a;
+        }
+
+        .closing-value {
+            display: table-cell;
+            text-align: right;
+            font-weight: bold;
+            font-size: 14px;
+            color: #003d7a;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #d0d7de;
+            font-size: 8px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="bank-logo">{{ stmt.bank_name }}</div>
+        <div class="bank-address">{{ stmt.bank_address }}</div>
+    </div>
+
+    <div class="statement-title">Bank Statement</div>
+
+    <div class="account-info">
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-cell info-label">Account Holder:</div>
+                <div class="info-cell info-value">{{ stmt.account_holder_name }}</div>
+                <div class="info-cell info-label">Sort Code:</div>
+                <div class="info-cell info-value">{{ stmt.sort_code }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Address:</div>
+                <div class="info-cell info-value">{{ stmt.account_holder_address }}</div>
+                <div class="info-cell info-label">Account Number:</div>
+                <div class="info-cell info-value">{{ stmt.account_number }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="period-info">
+        <div class="balance-row">
+            <div class="balance-label">Statement Period:</div>
+            <div class="balance-value">{{ stmt.statement_period_start.strftime('%d %B %Y') }} to {{ stmt.statement_period_end.strftime('%d %B %Y') }}</div>
+        </div>
+        <div class="balance-row">
+            <div class="balance-label">Statement Date:</div>
+            <div class="balance-value">{{ stmt.statement_date.strftime('%d %B %Y') }}</div>
+        </div>
+    </div>
+
+    <div style="background: #f0f4f8; padding: 10px; margin-bottom: 15px;">
+        <div class="balance-row" style="font-size: 10px;">
+            <div class="balance-label">Opening Balance:</div>
+            <div class="balance-value">£{{ "%.2f"|format(stmt.opening_balance) }}</div>
+        </div>
+    </div>
+
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th class="date-col">Date</th>
+                <th class="desc-col">Description</th>
+                <th class="debit-col">Money Out</th>
+                <th class="credit-col">Money In</th>
+                <th class="balance-col">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trans in stmt.transactions %}
+            <tr>
+                <td class="date-col">{{ trans.date.strftime('%d/%m/%Y') }}</td>
+                <td class="desc-col">{{ trans.description }}</td>
+                <td class="debit-col">{% if trans.debit %}£{{ "%.2f"|format(trans.debit) }}{% endif %}</td>
+                <td class="credit-col">{% if trans.credit %}£{{ "%.2f"|format(trans.credit) }}{% endif %}</td>
+                <td class="balance-col">£{{ "%.2f"|format(trans.balance) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="closing-balance">
+        <div class="closing-balance-row">
+            <div class="closing-label">CLOSING BALANCE:</div>
+            <div class="closing-value">£{{ "%.2f"|format(stmt.closing_balance) }}</div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        This statement shows transactions on your account for the period indicated. Please check your transactions carefully and contact us immediately if you notice any discrepancies.
+    </div>
+</body>
+</html>

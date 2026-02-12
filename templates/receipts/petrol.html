@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: 80mm 180mm; margin: 4mm; }
+        body { font-family: 'Arial Narrow', Arial, sans-serif; color: #000; line-height: 1.3; margin: 0; padding: 4mm; font-size: 10px; width: 72mm; background: #fff9e6; }
+        .header { text-align: center; background: #ff9800; color: #000; padding: 10px; margin-bottom: 8px; font-weight: bold; }
+        .store-name { font-size: 16px; letter-spacing: 2px; }
+        .tagline { font-size: 9px; margin-top: 3px; }
+        .store-info { font-size: 8px; margin: 2px 0; }
+        .info-box { background: #fff; border: 1px solid #ff9800; padding: 6px; margin: 6px 0; font-size: 9px; }
+        .info-row { margin: 2px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 10px; }
+        td { padding: 3px 0; border-bottom: 1px dotted #ccc; }
+        .desc { text-align: left; }
+        .price { text-align: right; font-weight: bold; }
+        .fuel-detail { font-size: 8px; color: #666; padding-left: 8px; }
+        .totals { background: #ffe082; border: 2px solid #ff9800; padding: 6px; margin: 8px 0; }
+        .totals-row { display: table; width: 100%; margin: 2px 0; }
+        .label { display: table-cell; font-size: 10px; }
+        .value { display: table-cell; text-align: right; font-weight: bold; font-size: 10px; }
+        .total-final { font-size: 14px; border-top: 2px solid #ff9800; padding-top: 4px; margin-top: 4px; }
+        .payment { text-align: center; background: #fff; border: 1px solid #ff9800; padding: 6px; margin: 6px 0; font-size: 9px; }
+        .footer { text-align: center; font-size: 8px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="store-name">{{ rec.store_name }}</div>
+        <div class="tagline">FUEL • SHOP • GO</div>
+    </div>
+    <div style="text-align: center; font-size: 8px; margin: 4px 0;">
+        {{ rec.store_address }}<br>Tel: {{ rec.store_phone }}
+    </div>
+    <div class="info-box">
+        <div class="info-row"><strong>Receipt:</strong> {{ rec.receipt_number }}</div>
+        <div class="info-row"><strong>Date:</strong> {{ rec.datetime.strftime('%d/%m/%Y') }} <strong>Time:</strong> {{ rec.datetime.strftime('%H:%M') }}</div>
+        <div class="info-row"><strong>Trans:</strong> {{ rec.transaction_id }}</div>
+    </div>
+    <table>
+        {% for item in rec.items %}
+        <tr>
+            <td class="desc">{{ item.description }}</td>
+            <td class="price">£{{ "%.2f"|format(item.total) }}</td>
+        </tr>
+        {% if item.quantity > 10.0 %}
+        <tr><td colspan="2" class="fuel-detail">{{ "%.2f"|format(item.quantity) }} Litres @ £{{ "%.2f"|format(item.unit_price) }}/L</td></tr>
+        {% elif item.quantity != 1.0 %}
+        <tr><td colspan="2" class="fuel-detail">{{ "%.0f"|format(item.quantity) }} @ £{{ "%.2f"|format(item.unit_price) }}</td></tr>
+        {% endif %}
+        {% endfor %}
+    </table>
+    <div class="totals">
+        <div class="totals-row">
+            <div class="label">Subtotal:</div>
+            <div class="value">£{{ "%.2f"|format(rec.subtotal) }}</div>
+        </div>
+        <div class="totals-row">
+            <div class="label">VAT ({{ "%.0f"|format(rec.tax_rate * 100) }}%):</div>
+            <div class="value">£{{ "%.2f"|format(rec.tax_amount) }}</div>
+        </div>
+        <div class="totals-row total-final">
+            <div class="label">TOTAL:</div>
+            <div class="value">£{{ "%.2f"|format(rec.total) }}</div>
+        </div>
+    </div>
+    <div class="payment">
+        <strong>PAID: {{ rec.payment_method }}</strong>
+        {% if rec.card_last_four %}<br>Card: ****{{ rec.card_last_four }}{% endif %}
+    </div>
+    <div class="footer">
+        THANK YOU - DRIVE SAFELY
+    </div>
+</body>
+</html>

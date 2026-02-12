@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm 12mm;
+        }
+
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            color: #2c3e50;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 15px 20px;
+            margin: -18mm -12mm 15mm -12mm;
+        }
+
+        .header-content {
+            display: table;
+            width: 100%;
+        }
+
+        .bank-info {
+            display: table-cell;
+            width: 60%;
+        }
+
+        .bank-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .bank-addr {
+            font-size: 8px;
+            opacity: 0.9;
+        }
+
+        .statement-info {
+            display: table-cell;
+            width: 40%;
+            text-align: right;
+            vertical-align: bottom;
+        }
+
+        .statement-type {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .statement-date {
+            font-size: 9px;
+            opacity: 0.9;
+            margin-top: 3px;
+        }
+
+        .customer-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .customer-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 3px;
+        }
+
+        .customer-address {
+            font-size: 9px;
+            color: #64748b;
+        }
+
+        .account-details {
+            display: table;
+            width: 100%;
+            background: white;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .account-row {
+            display: table-row;
+        }
+
+        .account-cell {
+            display: table-cell;
+            padding: 8px 12px;
+            border-right: 1px solid #e2e8f0;
+            font-size: 9px;
+        }
+
+        .account-cell:last-child {
+            border-right: none;
+        }
+
+        .acc-label {
+            color: #64748b;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .acc-value {
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .period-bar {
+            background: #1e3a8a;
+            color: white;
+            padding: 6px 12px;
+            margin-bottom: 12px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .opening-balance {
+            background: #dbeafe;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 10px;
+        }
+
+        .ob-label {
+            display: inline-block;
+            width: 45%;
+        }
+
+        .ob-value {
+            display: inline-block;
+            text-align: right;
+            width: 50%;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        table.trans {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 9px;
+        }
+
+        table.trans thead {
+            background: #1e3a8a;
+            color: white;
+        }
+
+        table.trans th {
+            padding: 7px 5px;
+            text-align: left;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        table.trans td {
+            padding: 5px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        table.trans tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .col-date {
+            width: 11%;
+        }
+
+        .col-desc {
+            width: 57%;
+        }
+
+        .col-out {
+            width: 13%;
+            text-align: right;
+            color: #dc2626;
+        }
+
+        .col-in {
+            width: 13%;
+            text-align: right;
+            color: #059669;
+        }
+
+        .col-bal {
+            width: 14%;
+            text-align: right;
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+
+        .summary-box {
+            background: #1e3a8a;
+            color: white;
+            padding: 12px 15px;
+            margin-top: 15px;
+        }
+
+        .summary-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .summary-row {
+            display: table;
+            width: 100%;
+            margin: 4px 0;
+            font-size: 10px;
+        }
+
+        .summary-label {
+            display: table-cell;
+        }
+
+        .summary-value {
+            display: table-cell;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .final-balance {
+            font-size: 16px;
+            border-top: 2px solid #60a5fa;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="bank-info">
+                <div class="bank-name">{{ stmt.bank_name }}</div>
+                <div class="bank-addr">{{ stmt.bank_address }}</div>
+            </div>
+            <div class="statement-info">
+                <div class="statement-type">STATEMENT</div>
+                <div class="statement-date">{{ stmt.statement_date.strftime('%d %B %Y') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="customer-section">
+        <div class="customer-name">{{ stmt.account_holder_name }}</div>
+        <div class="customer-address">{{ stmt.account_holder_address }}</div>
+    </div>
+
+    <div class="account-details">
+        <div class="account-row">
+            <div class="account-cell">
+                <div class="acc-label">Sort Code</div>
+                <div class="acc-value">{{ stmt.sort_code }}</div>
+            </div>
+            <div class="account-cell">
+                <div class="acc-label">Account Number</div>
+                <div class="acc-value">{{ stmt.account_number }}</div>
+            </div>
+            <div class="account-cell">
+                <div class="acc-label">Currency</div>
+                <div class="acc-value">{{ stmt.currency }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="period-bar">
+        STATEMENT PERIOD: {{ stmt.statement_period_start.strftime('%d/%m/%Y') }} - {{ stmt.statement_period_end.strftime('%d/%m/%Y') }}
+    </div>
+
+    <div class="opening-balance">
+        <span class="ob-label">OPENING BALANCE</span>
+        <span class="ob-value">£{{ "%.2f"|format(stmt.opening_balance) }}</span>
+    </div>
+
+    <table class="trans">
+        <thead>
+            <tr>
+                <th class="col-date">Date</th>
+                <th class="col-desc">Transaction Details</th>
+                <th class="col-out">Paid Out</th>
+                <th class="col-in">Paid In</th>
+                <th class="col-bal">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trans in stmt.transactions %}
+            <tr>
+                <td class="col-date">{{ trans.date.strftime('%d/%m/%y') }}</td>
+                <td class="col-desc">{{ trans.description }}</td>
+                <td class="col-out">{% if trans.debit %}£{{ "%.2f"|format(trans.debit) }}{% endif %}</td>
+                <td class="col-in">{% if trans.credit %}£{{ "%.2f"|format(trans.credit) }}{% endif %}</td>
+                <td class="col-bal">£{{ "%.2f"|format(trans.balance) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-box">
+        <div class="summary-title">Account Summary</div>
+        <div class="summary-row">
+            <div class="summary-label">Opening Balance:</div>
+            <div class="summary-value">£{{ "%.2f"|format(stmt.opening_balance) }}</div>
+        </div>
+        <div class="summary-row final-balance">
+            <div class="summary-label">CLOSING BALANCE:</div>
+            <div class="summary-value">£{{ "%.2f"|format(stmt.closing_balance) }}</div>
+        </div>
+    </div>
+</body>
+</html>

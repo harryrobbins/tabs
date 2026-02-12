@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: 80mm 220mm; margin: 6mm; }
+        body { font-family: 'Palatino', 'Book Antiqua', serif; color: #2a2a2a; line-height: 1.6; margin: 0; padding: 6mm; font-size: 11px; width: 68mm; background: #fdfcfa; }
+        .border { border: 2px solid #b8984e; padding: 8px; }
+        .header { text-align: center; padding-bottom: 10px; border-bottom: 1px solid #d4af37; }
+        .logo { font-size: 20px; color: #b8984e; margin-bottom: 5px; }
+        .store-name { font-size: 15px; font-weight: 600; color: #b8984e; letter-spacing: 1px; }
+        .store-info { font-size: 9px; color: #6a6a6a; margin: 2px 0; }
+        .accent { width: 40px; height: 1px; background: linear-gradient(to right, transparent, #d4af37, transparent); margin: 8px auto; }
+        .meta { background: #faf9f7; border: 1px solid #e8e0d5; padding: 6px; margin: 8px 0; font-size: 10px; }
+        .meta-row { margin: 2px 0; }
+        .meta-label { color: #b8984e; font-weight: 600; }
+        .items { margin: 10px 0; }
+        .item { padding: 6px 0; border-bottom: 1px solid #f0ebe3; }
+        .item-header { display: table; width: 100%; }
+        .item-desc { display: table-cell; font-weight: 600; }
+        .item-price { display: table-cell; text-align: right; color: #b8984e; }
+        .item-detail { font-size: 9px; color: #8a7a6a; margin-top: 2px; font-style: italic; }
+        .totals { background: #faf9f7; border: 2px solid #b8984e; padding: 8px; margin: 10px 0; }
+        .totals-row { display: table; width: 100%; margin: 4px 0; font-size: 11px; }
+        .label { display: table-cell; color: #6a6a6a; }
+        .value { display: table-cell; text-align: right; font-weight: 600; }
+        .total-final { font-size: 14px; color: #b8984e; border-top: 2px double #b8984e; padding-top: 6px; margin-top: 6px; }
+        .payment { text-align: center; background: #fff; border: 1px solid #e8e0d5; padding: 6px; margin: 8px 0; font-size: 10px; }
+        .footer { text-align: center; margin-top: 10px; font-size: 9px; color: #8a7a6a; font-style: italic; border-top: 1px solid #e8e0d5; padding-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="border">
+        <div class="header">
+            <div class="logo">✦</div>
+            <div class="store-name">{{ rec.store_name }}</div>
+            <div class="store-info">{{ rec.store_address }}</div>
+            <div class="store-info">{{ rec.store_phone }}</div>
+        </div>
+        <div class="accent"></div>
+        <div class="meta">
+            <div class="meta-row"><span class="meta-label">Receipt:</span> {{ rec.receipt_number }}</div>
+            <div class="meta-row"><span class="meta-label">Date:</span> {{ rec.datetime.strftime('%d %B %Y') }}</div>
+            <div class="meta-row"><span class="meta-label">Time:</span> {{ rec.datetime.strftime('%H:%M') }}</div>
+            <div class="meta-row"><span class="meta-label">Transaction:</span> {{ rec.transaction_id }}</div>
+        </div>
+        <div class="items">
+            {% for item in rec.items %}
+            <div class="item">
+                <div class="item-header">
+                    <div class="item-desc">{{ item.description }}</div>
+                    <div class="item-price">£{{ "%.2f"|format(item.total) }}</div>
+                </div>
+                {% if item.quantity != 1.0 %}
+                <div class="item-detail">{{ "%.1f"|format(item.quantity) }} pieces at £{{ "%.2f"|format(item.unit_price) }} each</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="totals">
+            <div class="totals-row">
+                <div class="label">Subtotal</div>
+                <div class="value">£{{ "%.2f"|format(rec.subtotal) }}</div>
+            </div>
+            <div class="totals-row">
+                <div class="label">VAT ({{ "%.0f"|format(rec.tax_rate * 100) }}%)</div>
+                <div class="value">£{{ "%.2f"|format(rec.tax_amount) }}</div>
+            </div>
+            <div class="totals-row total-final">
+                <div class="label">Total Amount</div>
+                <div class="value">£{{ "%.2f"|format(rec.total) }}</div>
+            </div>
+        </div>
+        <div class="payment">
+            <div><strong>Payment: {{ rec.payment_method }}</strong></div>
+            {% if rec.card_last_four %}<div>Card ending in {{ rec.card_last_four }}</div>{% endif %}
+        </div>
+        <div class="footer">
+            Thank you for your patronage<br>
+            We look forward to serving you again
+        </div>
+    </div>
+</body>
+</html>

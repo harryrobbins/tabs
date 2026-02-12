@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: 80mm 200mm; margin: 5mm; }
+        body { font-family: Arial, sans-serif; color: #1565c0; line-height: 1.4; margin: 0; padding: 5mm; font-size: 11px; width: 70mm; }
+        .header { text-align: center; border: 2px solid #1565c0; padding: 8px; margin-bottom: 10px; background: #e3f2fd; }
+        .cross { font-size: 20px; color: #d32f2f; }
+        .store-name { font-size: 14px; font-weight: bold; margin: 5px 0; }
+        .store-info { font-size: 9px; color: #333; margin: 2px 0; }
+        .meta { background: #fff; border: 1px solid #90caf9; padding: 6px; margin: 8px 0; font-size: 10px; }
+        .meta-row { margin: 2px 0; }
+        .items { margin: 8px 0; }
+        .item { border-bottom: 1px solid #e3f2fd; padding: 4px 0; }
+        .item-name { font-weight: bold; font-size: 10px; }
+        .item-detail { font-size: 9px; color: #555; margin-top: 2px; }
+        .item-price { text-align: right; font-size: 11px; }
+        .totals { background: #e3f2fd; border: 2px solid #1565c0; padding: 8px; margin: 10px 0; }
+        .totals-row { display: table; width: 100%; margin: 3px 0; }
+        .label { display: table-cell; font-size: 10px; }
+        .value { display: table-cell; text-align: right; font-size: 10px; }
+        .total-final { font-size: 13px; font-weight: bold; border-top: 2px solid #1565c0; padding-top: 5px; margin-top: 5px; }
+        .payment { text-align: center; margin: 8px 0; padding: 6px; background: #fff; border: 1px solid #90caf9; font-size: 10px; }
+        .footer { text-align: center; font-size: 9px; margin-top: 10px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="cross">✚</div>
+        <div class="store-name">{{ rec.store_name }}</div>
+        <div class="store-info">{{ rec.store_address }}</div>
+        <div class="store-info">{{ rec.store_phone }}</div>
+    </div>
+    <div class="meta">
+        <div class="meta-row"><strong>Receipt:</strong> {{ rec.receipt_number }}</div>
+        <div class="meta-row"><strong>Date/Time:</strong> {{ rec.datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+        <div class="meta-row"><strong>Trans ID:</strong> {{ rec.transaction_id }}</div>
+    </div>
+    <div class="items">
+        {% for item in rec.items %}
+        <div class="item">
+            <table style="width: 100%;">
+                <tr>
+                    <td class="item-name">{{ item.description }}</td>
+                    <td class="item-price">£{{ "%.2f"|format(item.total) }}</td>
+                </tr>
+                {% if item.quantity != 1.0 %}
+                <tr><td colspan="2" class="item-detail">Qty: {{ "%.0f"|format(item.quantity) }} @ £{{ "%.2f"|format(item.unit_price) }} each</td></tr>
+                {% endif %}
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="totals">
+        <div class="totals-row">
+            <div class="label">Subtotal:</div>
+            <div class="value">£{{ "%.2f"|format(rec.subtotal) }}</div>
+        </div>
+        <div class="totals-row">
+            <div class="label">VAT ({{ "%.0f"|format(rec.tax_rate * 100) }}%):</div>
+            <div class="value">£{{ "%.2f"|format(rec.tax_amount) }}</div>
+        </div>
+        <div class="totals-row total-final">
+            <div class="label">TOTAL PAID:</div>
+            <div class="value">£{{ "%.2f"|format(rec.total) }}</div>
+        </div>
+    </div>
+    <div class="payment">
+        <div><strong>Payment Method: {{ rec.payment_method }}</strong></div>
+        {% if rec.card_last_four %}<div>Card ending: {{ rec.card_last_four }}</div>{% endif %}
+    </div>
+    <div class="footer">
+        <div>Your Health, Our Priority</div>
+        <div>Thank you for visiting us</div>
+    </div>
+</body>
+</html>
