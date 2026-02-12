@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import List
-from src.models import InvoiceData, ReceiptData
+from src.models import InvoiceData, ReceiptData, BankStatementData
 
 
 class GroundTruthExporter:
@@ -235,6 +235,125 @@ class GroundTruthExporter:
                 "total": receipt.total,
                 "currency": receipt.currency,
                 "payment_method": receipt.payment_method,
+            }
+            rows.append(row)
+
+        df = pd.DataFrame(rows)
+
+        # Ensure output directory exists
+        output_dir = Path(output_path).parent
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        df.to_excel(output_path, index=False, engine='openpyxl')
+
+        return output_path
+
+    def export_statements_to_xlsx(
+        self,
+        statements: List[BankStatementData],
+        output_path="output/statements_ground_truth.xlsx"
+    ) -> str:
+        """
+        Export bank statement data to an Excel file with denormalized structure.
+
+        Args:
+            statements: List of BankStatementData objects
+            output_path: Path to save the XLSX file
+
+        Returns:
+            Path to the created XLSX file
+        """
+        if not statements:
+            raise ValueError("No statements to export")
+
+        # Build denormalized rows (one row per transaction)
+        rows = []
+        for statement in statements:
+            for idx, trans in enumerate(statement.transactions):
+                row = {
+                    # File reference
+                    "image_id": statement.id,
+                    "image_filename": f"{statement.id}.png",
+
+                    # Statement metadata
+                    "statement_period_start": statement.statement_period_start,
+                    "statement_period_end": statement.statement_period_end,
+                    "statement_date": statement.statement_date,
+                    "template_used": statement.template_used,
+
+                    # Account information
+                    "account_holder_name": statement.account_holder_name,
+                    "account_holder_address": statement.account_holder_address,
+                    "sort_code": statement.sort_code,
+                    "account_number": statement.account_number,
+
+                    # Bank information
+                    "bank_name": statement.bank_name,
+                    "bank_address": statement.bank_address,
+
+                    # Statement balances
+                    "opening_balance": statement.opening_balance,
+                    "closing_balance": statement.closing_balance,
+                    "num_transactions": len(statement.transactions),
+
+                    # Transaction details
+                    "transaction_index": idx,
+                    "transaction_date": trans.date,
+                    "transaction_description": trans.description,
+                    "transaction_debit": trans.debit,
+                    "transaction_credit": trans.credit,
+                    "transaction_balance": trans.balance,
+
+                    "currency": statement.currency,
+                }
+                rows.append(row)
+
+        # Create DataFrame
+        df = pd.DataFrame(rows)
+
+        # Ensure output directory exists
+        output_dir = Path(output_path).parent
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Export to Excel
+        df.to_excel(output_path, index=False, engine='openpyxl')
+
+        return output_path
+
+    def export_statements_summary(
+        self,
+        statements: List[BankStatementData],
+        output_path="output/statements_summary.xlsx"
+    ) -> str:
+        """
+        Export a summary view of bank statements with one row per statement.
+
+        Args:
+            statements: List of BankStatementData objects
+            output_path: Path to save the XLSX file
+
+        Returns:
+            Path to the created XLSX file
+        """
+        if not statements:
+            raise ValueError("No statements to export")
+
+        rows = []
+        for statement in statements:
+            row = {
+                "image_id": statement.id,
+                "account_holder": statement.account_holder_name,
+                "sort_code": statement.sort_code,
+                "account_number": statement.account_number,
+                "bank_name": statement.bank_name,
+                "period_start": statement.statement_period_start,
+                "period_end": statement.statement_period_end,
+                "statement_date": statement.statement_date,
+                "template": statement.template_used,
+                "num_transactions": len(statement.transactions),
+                "opening_balance": statement.opening_balance,
+                "closing_balance": statement.closing_balance,
+                "currency": statement.currency,
             }
             rows.append(row)
 

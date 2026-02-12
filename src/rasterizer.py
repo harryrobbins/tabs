@@ -21,17 +21,17 @@ class Rasterizer:
         pdf_path: str,
         output_dir="output/images_clean",
         image_format="png"
-    ) -> str:
+    ) -> list:
         """
-        Convert a PDF file to a high-resolution image.
+        Convert a PDF file to high-resolution images (handles multi-page PDFs).
 
         Args:
             pdf_path: Path to the PDF file
-            output_dir: Directory to save the image
+            output_dir: Directory to save the images
             image_format: Output format ('png' or 'jpeg')
 
         Returns:
-            Path to the generated image file
+            List of paths to the generated image files (one per page)
         """
         if not os.path.exists(pdf_path):
             raise FileNotFoundError(f"PDF not found: {pdf_path}")
@@ -39,7 +39,7 @@ class Rasterizer:
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
 
-        # Convert PDF to images (assuming single-page invoices)
+        # Convert PDF to images (handles both single and multi-page documents)
         images = convert_from_path(
             pdf_path,
             dpi=self.dpi,
@@ -49,17 +49,22 @@ class Rasterizer:
         if not images:
             raise ValueError(f"No images generated from PDF: {pdf_path}")
 
-        # For single-page documents, take the first page
-        image = images[0]
-
-        # Generate output path (preserve the same UUID from filename)
+        # Generate output paths for all pages
         pdf_filename = Path(pdf_path).stem
-        output_path = os.path.join(output_dir, f"{pdf_filename}.{image_format}")
+        output_paths = []
 
-        # Save the image
-        image.save(output_path, image_format.upper())
+        for page_num, image in enumerate(images, start=1):
+            # For single-page documents, use simple naming; for multi-page, add page number
+            if len(images) == 1:
+                output_path = os.path.join(output_dir, f"{pdf_filename}.{image_format}")
+            else:
+                output_path = os.path.join(output_dir, f"{pdf_filename}_page{page_num}.{image_format}")
 
-        return output_path
+            # Save the image
+            image.save(output_path, image_format.upper())
+            output_paths.append(output_path)
+
+        return output_paths
 
     def batch_convert(self, pdf_dir="output/pdfs", output_dir="output/images_clean"):
         """
@@ -70,7 +75,7 @@ class Rasterizer:
             output_dir: Directory to save images
 
         Returns:
-            List of generated image paths
+            List of generated image paths (flattened, includes all pages from all PDFs)
         """
         pdf_path = Path(pdf_dir)
         if not pdf_path.exists():
@@ -84,9 +89,12 @@ class Rasterizer:
         image_paths = []
         for pdf_file in pdf_files:
             try:
-                img_path = self.pdf_to_image(str(pdf_file), output_dir)
-                image_paths.append(img_path)
-                print(f"Converted: {pdf_file.name} -> {Path(img_path).name}")
+                img_paths = self.pdf_to_image(str(pdf_file), output_dir)
+                image_paths.extend(img_paths)  # Flatten the list of paths
+                if len(img_paths) == 1:
+                    print(f"Converted: {pdf_file.name} -> {Path(img_paths[0]).name}")
+                else:
+                    print(f"Converted: {pdf_file.name} -> {len(img_paths)} pages")
             except Exception as e:
                 print(f"Error converting {pdf_file.name}: {e}")
 

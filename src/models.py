@@ -56,3 +56,31 @@ class ReceiptData(BaseModel):
     card_last_four: Optional[str] = None
     currency: str = "GBP"
     template_used: str = Field(default="", description="Name of template used for rendering")
+
+
+class Transaction(BaseModel):
+    """Represents a single transaction on a bank statement."""
+    date: date
+    description: str
+    debit: Optional[float] = None  # Money out
+    credit: Optional[float] = None  # Money in
+    balance: float
+
+
+class BankStatementData(BaseModel):
+    """Complete bank statement data structure - the ground truth for bank statement generation."""
+    id: str = Field(..., description="Unique ID for file naming")
+    account_holder_name: str
+    account_holder_address: str
+    account_number: str  # Last 4 digits
+    sort_code: str  # Format: XX-XX-XX
+    statement_period_start: date
+    statement_period_end: date
+    statement_date: date
+    opening_balance: float
+    closing_balance: float
+    transactions: List[Transaction]
+    bank_name: str
+    bank_address: str
+    currency: str = "GBP"
+    template_used: str = Field(default="", description="Name of template used for rendering")

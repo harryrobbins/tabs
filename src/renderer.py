@@ -3,19 +3,19 @@ import random
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
-from src.models import InvoiceData, ReceiptData
+from src.models import InvoiceData, ReceiptData, BankStatementData
 from typing import Union
 
 
 class Renderer:
-    """Renders invoice and receipt data into PDFs using HTML/CSS templates."""
+    """Renders invoice, receipt, and bank statement data into PDFs using HTML/CSS templates."""
 
     def __init__(self, document_type="invoice"):
         """
         Initialize the renderer for a specific document type.
 
         Args:
-            document_type: Type of document - 'invoice' or 'receipt'
+            document_type: Type of document - 'invoice', 'receipt', or 'bank_statement'
         """
         self.document_type = document_type
 
@@ -23,6 +23,8 @@ class Renderer:
             self.template_dir = "templates/invoices"
         elif document_type == "receipt":
             self.template_dir = "templates/receipts"
+        elif document_type == "bank_statement":
+            self.template_dir = "templates/bank_statements"
         else:
             raise ValueError(f"Unknown document type: {document_type}")
 
@@ -45,15 +47,15 @@ class Renderer:
 
     def render_to_pdf(
         self,
-        data: Union[InvoiceData, ReceiptData],
+        data: Union[InvoiceData, ReceiptData, BankStatementData],
         output_dir="output/pdfs",
         template_name=None
     ) -> str:
         """
-        Render invoice or receipt data to a PDF file.
+        Render invoice, receipt, or bank statement data to a PDF file.
 
         Args:
-            data: InvoiceData or ReceiptData object to render
+            data: InvoiceData, ReceiptData, or BankStatementData object to render
             output_dir: Directory to save the PDF
             template_name: Specific template to use (if None, random selection)
 
@@ -72,11 +74,13 @@ class Renderer:
         # Load and render template
         template = self.env.get_template(template_name)
 
-        # Use different variable names for invoices vs receipts in templates
+        # Use different variable names for different document types in templates
         if self.document_type == "invoice":
             html_string = template.render(inv=data)
-        else:  # receipt
+        elif self.document_type == "receipt":
             html_string = template.render(rec=data)
+        else:  # bank_statement
+            html_string = template.render(stmt=data)
 
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)

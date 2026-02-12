@@ -1,8 +1,8 @@
 import random
 import uuid
-from datetime import timedelta, datetime, time
+from datetime import timedelta, datetime, time, date
 from faker import Faker
-from src.models import InvoiceData, LineItem, ReceiptData, ReceiptItem
+from src.models import InvoiceData, LineItem, ReceiptData, ReceiptItem, BankStatementData, Transaction
 
 fake = Faker('en_GB')  # Use UK locale for British addresses and names
 
@@ -271,15 +271,236 @@ class ReceiptFabricator:
         )
 
 
+class BankStatementFabricator:
+    """Generates synthetic bank statement data with multiple transactions."""
+
+    def __init__(self):
+        """Initialize the bank statement fabricator."""
+        # UK banks
+        self.banks = [
+            {"name": "Barclays Bank PLC", "address": "1 Churchill Place, London, E14 5HP"},
+            {"name": "HSBC UK Bank PLC", "address": "8 Canada Square, London, E14 5HQ"},
+            {"name": "Lloyds Bank PLC", "address": "25 Gresham Street, London, EC2V 7HN"},
+            {"name": "NatWest Bank PLC", "address": "250 Bishopsgate, London, EC2M 4AA"},
+            {"name": "Santander UK PLC", "address": "2 Triton Square, London, NW1 3AN"},
+        ]
+
+        # Transaction types and descriptions
+        self.transaction_types = {
+            "salary": {
+                "descriptions": ["SALARY PAYMENT", "MONTHLY SALARY", "PAYROLL"],
+                "type": "credit",
+                "amount_range": (1500, 5000)
+            },
+            "direct_debit": {
+                "descriptions": [
+                    "DD - BRITISH GAS",
+                    "DD - THAMES WATER",
+                    "DD - COUNCIL TAX",
+                    "DD - MOBILE PHONE",
+                    "DD - BROADBAND",
+                    "DD - CAR INSURANCE",
+                    "DD - HOME INSURANCE",
+                    "DD - GYM MEMBERSHIP",
+                    "DD - NETFLIX",
+                    "DD - SPOTIFY"
+                ],
+                "type": "debit",
+                "amount_range": (5, 150)
+            },
+            "card_purchase": {
+                "descriptions": [
+                    "TESCO STORES",
+                    "SAINSBURY'S",
+                    "ASDA SUPERSTORE",
+                    "MORRISONS",
+                    "MARKS & SPENCER",
+                    "AMAZON.CO.UK",
+                    "JOHN LEWIS",
+                    "BOOTS",
+                    "COSTA COFFEE",
+                    "PRET A MANGER",
+                    "WAITROSE",
+                    "ARGOS",
+                    "NEXT",
+                    "H&M",
+                    "ZARA",
+                    "SHELL PETROL",
+                    "BP FUEL",
+                    "NANDOS",
+                    "PIZZA EXPRESS",
+                    "GREGGS"
+                ],
+                "type": "debit",
+                "amount_range": (3, 200)
+            },
+            "atm_withdrawal": {
+                "descriptions": ["ATM WITHDRAWAL", "CASH WITHDRAWAL"],
+                "type": "debit",
+                "amount_range": (20, 100)
+            },
+            "transfer_out": {
+                "descriptions": [
+                    "TRANSFER TO SAVINGS",
+                    "TRANSFER TO J SMITH",
+                    "TRANSFER TO S JONES"
+                ],
+                "type": "debit",
+                "amount_range": (50, 500)
+            },
+            "transfer_in": {
+                "descriptions": [
+                    "TRANSFER FROM SAVINGS",
+                    "BANK TRANSFER",
+                    "FASTER PAYMENT"
+                ],
+                "type": "credit",
+                "amount_range": (50, 1000)
+            },
+            "interest": {
+                "descriptions": ["INTEREST PAID", "MONTHLY INTEREST"],
+                "type": "credit",
+                "amount_range": (0.50, 15)
+            }
+        }
+
+    def _generate_transaction(self, current_date: date, balance: float) -> Transaction:
+        """Generate a single transaction."""
+        # Weighted selection - more card purchases and direct debits
+        trans_type = random.choices(
+            list(self.transaction_types.keys()),
+            weights=[5, 15, 50, 8, 5, 5, 2],  # More common: card purchases, direct debits
+            k=1
+        )[0]
+
+        trans_info = self.transaction_types[trans_type]
+        description = random.choice(trans_info["descriptions"])
+
+        # Generate amount
+        min_amt, max_amt = trans_info["amount_range"]
+        amount = round(random.uniform(min_amt, max_amt), 2)
+
+        # Create transaction
+        if trans_info["type"] == "debit":
+            new_balance = balance - amount
+            return Transaction(
+                date=current_date,
+                description=description,
+                debit=amount,
+                credit=None,
+                balance=round(new_balance, 2)
+            )
+        else:  # credit
+            new_balance = balance + amount
+            return Transaction(
+                date=current_date,
+                description=description,
+                debit=None,
+                credit=amount,
+                balance=round(new_balance, 2)
+            )
+
+    def generate_statement(self) -> BankStatementData:
+        """
+        Create a completely synthetic bank statement with 10-300 transactions.
+
+        Returns:
+            BankStatementData object with all fields populated
+        """
+        # Select bank
+        bank = random.choice(self.banks)
+
+        # Generate statement period (full month, 1-6 months ago)
+        months_ago = random.randint(1, 6)
+        end_date = (datetime.now() - timedelta(days=30 * months_ago)).date()
+        # Set to last day of month
+        if end_date.month == 12:
+            end_date = end_date.replace(day=31)
+        else:
+            next_month = end_date.replace(month=end_date.month + 1, day=1)
+            end_date = (next_month - timedelta(days=1))
+
+        # Start date is first day of same month
+        start_date = end_date.replace(day=1)
+
+        # Statement date is a few days after period end
+        statement_date = end_date + timedelta(days=random.randint(2, 5))
+
+        # Generate number of transactions (10-300)
+        num_transactions = random.randint(10, 300)
+
+        # Opening balance
+        opening_balance = round(random.uniform(100, 5000), 2)
+
+        # Generate transactions
+        transactions = []
+        current_balance = opening_balance
+        current_date = start_date
+
+        for _ in range(num_transactions):
+            # Random date within statement period
+            days_in_period = (end_date - start_date).days + 1
+            random_day = random.randint(0, days_in_period - 1)
+            trans_date = start_date + timedelta(days=random_day)
+
+            transaction = self._generate_transaction(trans_date, current_balance)
+            current_balance = transaction.balance
+            transactions.append(transaction)
+
+        # Sort transactions by date
+        transactions.sort(key=lambda t: t.date)
+
+        # Recalculate balances in chronological order
+        current_balance = opening_balance
+        for trans in transactions:
+            if trans.debit:
+                current_balance -= trans.debit
+            if trans.credit:
+                current_balance += trans.credit
+            trans.balance = round(current_balance, 2)
+
+        closing_balance = current_balance
+
+        # Generate account details
+        sort_code = f"{random.randint(10, 99)}-{random.randint(10, 99)}-{random.randint(10, 99)}"
+        account_number = f"****{random.randint(1000, 9999)}"
+
+        return BankStatementData(
+            id=str(uuid.uuid4()),
+            account_holder_name=fake.name(),
+            account_holder_address=fake.address().replace("\n", ", "),
+            account_number=account_number,
+            sort_code=sort_code,
+            statement_period_start=start_date,
+            statement_period_end=end_date,
+            statement_date=statement_date,
+            opening_balance=opening_balance,
+            closing_balance=closing_balance,
+            transactions=transactions,
+            bank_name=bank["name"],
+            bank_address=bank["address"],
+            currency="GBP"
+        )
+
+
 # Quick test if run directly
 if __name__ == "__main__":
     print("Testing Invoice Fabricator:")
     inv_fab = DataFabricator()
     invoice = inv_fab.generate_invoice()
-    print(invoice.model_dump_json(indent=2))
+    print(f"Generated invoice with {len(invoice.line_items)} items")
 
     print("\n" + "="*70 + "\n")
     print("Testing Receipt Fabricator:")
     rec_fab = ReceiptFabricator()
     receipt = rec_fab.generate_receipt()
-    print(receipt.model_dump_json(indent=2))
+    print(f"Generated receipt with {len(receipt.items)} items")
+
+    print("\n" + "="*70 + "\n")
+    print("Testing Bank Statement Fabricator:")
+    bank_fab = BankStatementFabricator()
+    statement = bank_fab.generate_statement()
+    print(f"Generated statement with {len(statement.transactions)} transactions")
+    print(f"Period: {statement.statement_period_start} to {statement.statement_period_end}")
+    print(f"Opening balance: £{statement.opening_balance:.2f}")
+    print(f"Closing balance: £{statement.closing_balance:.2f}")

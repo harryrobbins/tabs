@@ -10,7 +10,7 @@ import argparse
 import time
 from pathlib import Path
 
-from src.fabricator import DataFabricator, ReceiptFabricator
+from src.fabricator import DataFabricator, ReceiptFabricator, BankStatementFabricator
 from src.renderer import Renderer
 from src.rasterizer import Rasterizer
 from src.entropy import EntropyEngine
@@ -20,24 +20,26 @@ from src.exporter import GroundTruthExporter
 def generate_documents(
     invoice_count: int = 0,
     receipt_count: int = 0,
+    statement_count: int = 0,
     output_dir: str = "output",
     degradation: str = "medium",
     dpi: int = 300,
     clean_images: bool = False
 ):
     """
-    Generate batches of synthetic invoices and/or receipts.
+    Generate batches of synthetic invoices, receipts, and/or bank statements.
 
     Args:
         invoice_count: Number of invoices to generate
         receipt_count: Number of receipts to generate
+        statement_count: Number of bank statements to generate
         output_dir: Base output directory
         degradation: Degradation intensity ('light', 'medium', 'heavy')
         dpi: Image resolution for rasterization
         clean_images: Whether to save clean (pre-degradation) images
     """
-    if invoice_count == 0 and receipt_count == 0:
-        print("Error: Must specify at least one of --invoices or --receipts")
+    if invoice_count == 0 and receipt_count == 0 and statement_count == 0:
+        print("Error: Must specify at least one of --invoices, --receipts, or --bank-statements")
         return
 
     print("=" * 70)
@@ -48,6 +50,8 @@ def generate_documents(
         print(f"  Invoices: {invoice_count}")
     if receipt_count > 0:
         print(f"  Receipts: {receipt_count}")
+    if statement_count > 0:
+        print(f"  Bank Statements: {statement_count}")
     print(f"  Output directory: {output_dir}")
     print(f"  Degradation level: {degradation}")
     print(f"  Image DPI: {dpi}")
@@ -111,9 +115,34 @@ def generate_documents(
         print(f"  ✓ Summary: {rec_summary_path}")
         print(f"  ✓ Completed in {export_time:.2f}s\n")
 
+    # Process bank statements
+    if statement_count > 0:
+        print("\n" + "="*70)
+        print("PROCESSING BANK STATEMENTS")
+        print("="*70 + "\n")
+
+        statements = process_document_type(
+            document_type="bank_statement",
+            count=statement_count,
+            output_dir=output_dir,
+            rasterizer=rasterizer,
+            entropy=entropy,
+            clean_images=clean_images
+        )
+
+        # Export bank statement ground truth
+        print("[5/5] EXPORT - Creating bank statement ground truth...")
+        start_time = time.time()
+        stmt_gt_path = exporter.export_statements_to_xlsx(statements, f"{output_dir}/statements_ground_truth.xlsx")
+        stmt_summary_path = exporter.export_statements_summary(statements, f"{output_dir}/statements_summary.xlsx")
+        export_time = time.time() - start_time
+        print(f"  ✓ Ground truth: {stmt_gt_path}")
+        print(f"  ✓ Summary: {stmt_summary_path}")
+        print(f"  ✓ Completed in {export_time:.2f}s\n")
+
     # Final summary
     total_time = time.time() - total_start
-    total_docs = invoice_count + receipt_count
+    total_docs = invoice_count + receipt_count + statement_count
 
     print("=" * 70)
     print("GENERATION COMPLETE")
@@ -135,6 +164,13 @@ def generate_documents(
         print(f"    ├── receipts_images_degraded/   ({receipt_count} files)")
         print(f"    ├── receipts_ground_truth.xlsx")
         print(f"    └── receipts_summary.xlsx")
+    if statement_count > 0:
+        print(f"    ├── bank_statements_pdfs/       ({statement_count} files)")
+        if clean_images:
+            print(f"    ├── bank_statements_images_clean/      ({statement_count}+ files, multi-page)")
+        print(f"    ├── bank_statements_images_degraded/   ({statement_count}+ files, multi-page)")
+        print(f"    ├── statements_ground_truth.xlsx")
+        print(f"    └── statements_summary.xlsx")
     print()
 
 
@@ -174,9 +210,12 @@ def process_document_type(
     if document_type == "invoice":
         fabricator = DataFabricator()
         renderer = Renderer(document_type="invoice")
-    else:  # receipt
+    elif document_type == "receipt":
         fabricator = ReceiptFabricator()
         renderer = Renderer(document_type="receipt")
+    else:  # bank_statement
+        fabricator = BankStatementFabricator()
+        renderer = Renderer(document_type="bank_statement")
 
     # Stage 1: Fabrication
     print(f"[1/4] FABRICATION - Generating synthetic {document_type} data...")
@@ -186,8 +225,10 @@ def process_document_type(
     for i in range(count):
         if document_type == "invoice":
             doc = fabricator.generate_invoice()
-        else:
+        elif document_type == "receipt":
             doc = fabricator.generate_receipt()
+        else:  # bank_statement
+            doc = fabricator.generate_statement()
         documents.append(doc)
         if (i + 1) % 10 == 0 or (i + 1) == count:
             print(f"  Generated {i + 1}/{count} {prefix}")
@@ -214,14 +255,16 @@ def process_document_type(
     start_time = time.time()
 
     clean_paths = []
+    total_pages = 0
     for i, pdf_path in enumerate(pdf_paths):
-        img_path = rasterizer.pdf_to_image(pdf_path, output_dir=clean_dir)
-        clean_paths.append(img_path)
+        img_paths = rasterizer.pdf_to_image(pdf_path, output_dir=clean_dir)
+        clean_paths.extend(img_paths)  # Flatten: handles both single and multi-page PDFs
+        total_pages += len(img_paths)
         if (i + 1) % 10 == 0 or (i + 1) == count:
-            print(f"  Converted {i + 1}/{count} images")
+            print(f"  Converted {i + 1}/{count} documents ({total_pages} pages)")
 
     raster_time = time.time() - start_time
-    print(f"  ✓ Completed in {raster_time:.2f}s\n")
+    print(f"  ✓ Completed in {raster_time:.2f}s ({total_pages} total pages)\n")
 
     # Stage 4: Entropy (Degradation)
     print(f"[4/4] ENTROPY - Applying degradation effects...")
@@ -231,8 +274,8 @@ def process_document_type(
     for i, clean_path in enumerate(clean_paths):
         deg_path = entropy.degrade_image(clean_path, output_dir=degraded_dir)
         degraded_paths.append(deg_path)
-        if (i + 1) % 10 == 0 or (i + 1) == count:
-            print(f"  Degraded {i + 1}/{count} images")
+        if (i + 1) % 10 == 0 or (i + 1) == len(clean_paths):
+            print(f"  Degraded {i + 1}/{len(clean_paths)} images")
 
     entropy_time = time.time() - start_time
     print(f"  ✓ Completed in {entropy_time:.2f}s\n")
@@ -242,7 +285,7 @@ def process_document_type(
         print("Cleaning up intermediate files...")
         for path in clean_paths:
             Path(path).unlink()
-        print(f"  ✓ Removed {len(clean_paths)} clean images\n")
+        print(f"  ✓ Removed {len(clean_paths)} clean image(s)\n")
 
     return documents
 
@@ -278,6 +321,13 @@ Examples:
         type=int,
         default=0,
         help="Number of receipts to generate (default: 0)"
+    )
+    parser.add_argument(
+        "--bank-statements",
+        type=int,
+        default=0,
+        dest="bank_statements",
+        help="Number of bank statements to generate (default: 0)"
     )
     parser.add_argument(
         "-o", "--output",
@@ -326,6 +376,7 @@ Examples:
     generate_documents(
         invoice_count=invoice_count,
         receipt_count=args.receipts,
+        statement_count=args.bank_statements,
         output_dir=args.output,
         degradation=args.degradation,
         dpi=args.dpi,
